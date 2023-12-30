@@ -31,6 +31,7 @@ func NewDiskStore(filename string) Bitcask {
 	return ds
 }
 
+// Get returns the value for the given key.
 func (d *DiskStore) Get(key string) (string, error) {
 	entry, found := d.KeyDir[key]
 	if !found {
@@ -64,17 +65,8 @@ func (d *DiskStore) Put(key, value string) (string, error) {
 
 	// Encode the KV
 	kv := NewKeyValue(key, value)
-	encoded := encodeKV(kv)
-
-	// Write it to disk
-	n, err := d.ActiveFile.Write(encoded)
-	if err != nil || n != len(encoded) {
-		return "", fmt.Errorf("error writing to disk: %v", err)
-	}
-	d.Position += n
-
-	if err = d.ActiveFile.Sync(); err != nil {
-		return "", fmt.Errorf("error syncing to disk: %v", err)
+	if err = d.writeKV(kv); err != nil {
+		return "", err
 	}
 
 	// Update the KeyDir
@@ -87,16 +79,54 @@ func (d *DiskStore) Put(key, value string) (string, error) {
 	return old, nil
 }
 
-func (d *DiskStore) Delete(string) (string, error) {
-	return "", nil
+func (d *DiskStore) writeKV(kv KeyValue) error {
+	encoded := encodeKV(kv)
+
+	// Write it to disk
+	n, err := d.ActiveFile.Write(encoded)
+	if err != nil || n != len(encoded) {
+		return fmt.Errorf("error writing to disk: %v", err)
+	}
+	d.Position += n
+
+	if err = d.ActiveFile.Sync(); err != nil {
+		return fmt.Errorf("error syncing to disk: %v", err)
+	}
+
+	return nil
 }
 
+// Delete removes a key-value pair from the store.
+func (d *DiskStore) Delete(key string) (string, error) {
+	value, err := d.Get(key)
+	if err != nil {
+		return "", err
+	}
+
+	// Write a tombstone entry
+	ts := NewKeyValue(key, value)
+	ts.Tombstone = DELETE
+	if err := d.writeKV(ts); err != nil {
+		return value, err
+	}
+
+	// Remove key from the KeyDir
+	delete(d.KeyDir, key)
+
+	return value, nil
+}
+
+// ListKeys returns a slice of all keys in the store.
 func (d *DiskStore) ListKeys() []string {
 	return nil
 }
 
+// Close() syncs and closes the active file.
 func (d *DiskStore) Close() error {
-	return nil
+	if err := d.ActiveFile.Sync(); err != nil {
+		return err
+	}
+	return d.ActiveFile.Close()
 }
 
 func fileExists(filename string) bool {
