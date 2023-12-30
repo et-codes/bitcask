@@ -63,7 +63,7 @@ func (d *DiskStore) Put(key, value string) (string, error) {
 		}
 	}
 
-	// Encode the KV
+	// Write the KV
 	kv := NewKeyValue(key, value)
 	if err = d.writeKV(kv); err != nil {
 		return "", err
@@ -79,6 +79,7 @@ func (d *DiskStore) Put(key, value string) (string, error) {
 	return old, nil
 }
 
+// writeKV encodes the KeyValue struct and writes it to disk.
 func (d *DiskStore) writeKV(kv KeyValue) error {
 	encoded := encodeKV(kv)
 
@@ -133,6 +134,7 @@ func (d *DiskStore) Close() error {
 	return d.ActiveFile.Close()
 }
 
+// fileExists returns true if the file exists.
 func fileExists(filename string) bool {
 	if _, err := os.Stat(filename); err != nil {
 		return false
