@@ -7,3 +7,10 @@ type Bitcask interface {
 	ListKeys() []string
 	Close() error
 }
+
+func New(fileName string) Bitcask {
+	if fileName == ":memory:" {
+		return NewMemoryStore()
+	}
+	return NewDiskStore(fileName)
+}
