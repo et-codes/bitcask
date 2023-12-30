@@ -9,18 +9,28 @@ import (
 
 func TestBitcask(t *testing.T) {
 	t.Run("test put and get", func(t *testing.T) {
+		// put works
 		key := "name"
 		value := "John Doe"
 		b := setUp(t, key, value)
 
+		// get works
 		actual, err := b.Get(key)
 		assert.NoError(t, err)
 		assert.Equal(t, value, actual)
 
+		// get fails with non-existent key
+		_, err = b.Get("bad key")
+		assert.Error(t, err)
+
+		// putting same key returns old value
 		newValue := "Jane Doe"
 		oldVal, err := b.Put(key, newValue)
 		assert.NoError(t, err)
 		assert.Equal(t, value, oldVal)
+		actual, err = b.Get(key)
+		assert.NoError(t, err)
+		assert.Equal(t, newValue, actual)
 	})
 
 	t.Run("test delete", func(t *testing.T) {
