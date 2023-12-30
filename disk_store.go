@@ -12,6 +12,7 @@ type DiskStore struct{
 func NewDiskStore(filename string) Bitcask {
 	ds := &DiskStore{}
 	if fileExists(filename) {
+		// TODO: handle reopening existing database.
 		panic("existing file handling not implemented")
 	} else {
 		file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
