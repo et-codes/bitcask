@@ -118,7 +118,11 @@ func (d *DiskStore) Delete(key string) (string, error) {
 
 // ListKeys returns a slice of all keys in the store.
 func (d *DiskStore) ListKeys() []string {
-	return nil
+	keys := []string{}
+	for key := range d.KeyDir {
+		keys = append(keys, key)
+	}
+	return keys
 }
 
 // Close() syncs and closes the active file.
