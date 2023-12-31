@@ -25,7 +25,7 @@ func NewDiskStore(filename string) Bitcask {
 			log.Fatalf("unable to open data file: %v\n", err)
 		}
 		ds.ActiveFile = file
-		if err := ds.LoadPersistent(); err != nil {
+		if err := ds.loadPersistent(); err != nil {
 			log.Fatalf("unable to load persistent data: %v\n", err)
 		}
 	} else {
@@ -39,8 +39,8 @@ func NewDiskStore(filename string) Bitcask {
 	return ds
 }
 
-// LoadPersistent populates the KeyDir from an existing database file.
-func (d *DiskStore) LoadPersistent() error {
+// loadPersistent populates the KeyDir from an existing database file.
+func (d *DiskStore) loadPersistent() error {
 	for {
 		// Read header to get key and value sizes.
 		header := make([]byte, headerSize)

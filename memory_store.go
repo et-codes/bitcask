@@ -19,7 +19,7 @@ func (m *MemoryStore) Get(key string) (string, error) {
 	return value, nil
 }
 
-// Put stores a new key and value and returns the old value if the key 
+// Put stores a new key and value and returns the old value if the key
 // already exists, otherwise an empty string.
 func (m *MemoryStore) Put(key string, value string) (string, error) {
 	oldValue, _ := m.Get(key)
@@ -37,6 +37,7 @@ func (m *MemoryStore) Delete(key string) (string, error) {
 	return value, nil
 }
 
+// ListKeys returns a slice containing all active keys.
 func (m *MemoryStore) ListKeys() []string {
 	var out []string
 	for key := range m.data {
@@ -46,6 +47,7 @@ func (m *MemoryStore) ListKeys() []string {
 	return out
 }
 
+// Close closes the store.
 func (m *MemoryStore) Close() error {
 	return nil
 }
