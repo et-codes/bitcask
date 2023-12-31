@@ -73,17 +73,17 @@ func TestBitcask(t *testing.T) {
 }
 
 func TestPersistence(t *testing.T) {
+	pairs := map[string]string{
+		"one":   "I",
+		"two":   "II",
+		"three": "III",
+		"four":  "IV",
+		"five":  "V",
+	}
+
 	t.Run("loads saved data", func(t *testing.T) {
 		b := bitcask.New(filename)
 		defer os.Remove(filename)
-
-		pairs := map[string]string{
-			"one":   "I",
-			"two":   "II",
-			"three": "III",
-			"four":  "IV",
-			"five":  "V",
-		}
 
 		for k, v := range pairs {
 			_, err := b.Put(k, v)
@@ -104,14 +104,6 @@ func TestPersistence(t *testing.T) {
 	t.Run("doesn't load deleted data", func(t *testing.T) {
 		b := bitcask.New(filename)
 		defer os.Remove(filename)
-
-		pairs := map[string]string{
-			"one":   "I",
-			"two":   "II",
-			"three": "III",
-			"four":  "IV",
-			"five":  "V",
-		}
 
 		for k, v := range pairs {
 			_, err := b.Put(k, v)
