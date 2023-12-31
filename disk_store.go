@@ -73,7 +73,6 @@ func (d *DiskStore) LoadPersistent() error {
 		}
 
 		kv := decodeKV(data)
-		log.Println(kv)
 		kde := KeyDirEntry{
 			ValueSize:     kv.ValueSize,
 			ValuePosition: uint32(position) - kv.ValueSize,
