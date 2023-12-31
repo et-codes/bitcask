@@ -41,7 +41,6 @@ func NewDiskStore(filename string) Bitcask {
 
 // LoadPersistent populates the KeyDir from an existing database file.
 func (d *DiskStore) LoadPersistent() error {
-	position := 0
 	for {
 		// Read header to get key and value sizes.
 		header := make([]byte, headerSize)
@@ -52,7 +51,7 @@ func (d *DiskStore) LoadPersistent() error {
 			}
 			return err
 		}
-		position += n
+		d.Position += n
 
 		keySize := binary.LittleEndian.Uint32(header[9:13])
 		valueSize := binary.LittleEndian.Uint32(header[13:17])
@@ -65,7 +64,7 @@ func (d *DiskStore) LoadPersistent() error {
 		if err != nil {
 			return err
 		}
-		position += n
+		d.Position += n
 
 		// Perform CRC check.
 		if !isValidKV(data) {
@@ -75,7 +74,7 @@ func (d *DiskStore) LoadPersistent() error {
 		kv := decodeKV(data)
 		kde := KeyDirEntry{
 			ValueSize:     kv.ValueSize,
-			ValuePosition: uint32(position) - kv.ValueSize,
+			ValuePosition: uint32(d.Position) - kv.ValueSize,
 			Timestamp:     kv.Timestamp,
 		}
 
