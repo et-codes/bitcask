@@ -1,7 +1,9 @@
 package bitcask
 
 import (
+	"encoding/binary"
 	"fmt"
+	"io"
 	"log"
 	"os"
 )
@@ -18,8 +20,14 @@ func NewDiskStore(filename string) Bitcask {
 	}
 
 	if fileExists(filename) {
-		// TODO: handle reopening existing database.
-		panic("existing file handling not implemented")
+		file, err := os.OpenFile(filename, os.O_RDWR|os.O_APPEND, 0666)
+		if err != nil {
+			log.Fatalf("unable to open data file: %v\n", err)
+		}
+		ds.ActiveFile = file
+		if err := ds.LoadPersistent(); err != nil {
+			log.Fatalf("unable to load persistent data: %v\n", err)
+		}
 	} else {
 		file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
@@ -29,6 +37,49 @@ func NewDiskStore(filename string) Bitcask {
 	}
 
 	return ds
+}
+
+// LoadPersistent populates the KeyDir from an existing database file.
+func (d *DiskStore) LoadPersistent() error {
+	position := 0
+	for {
+		header := make([]byte, headerSize)
+		n, err := d.ActiveFile.Read(header)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+		position += n
+
+		if header[4] == KEEP {
+			keySize := binary.LittleEndian.Uint32(header[9:13])
+			valueSize := binary.LittleEndian.Uint32(header[13:17])
+
+			data := make([]byte, headerSize+keySize+valueSize)
+			copy(data, header)
+
+			n, err := d.ActiveFile.Read(data[headerSize : headerSize+keySize+valueSize])
+			if err != nil {
+				return err
+			}
+			position += n
+
+			if !isValidKV(data) {
+				return fmt.Errorf("CRC check failed")
+			}
+
+			kv := decodeKV(data)
+			kde := KeyDirEntry{
+				ValueSize:     kv.ValueSize,
+				ValuePosition: uint32(position) - kv.ValueSize,
+				Timestamp:     kv.Timestamp,
+			}
+			d.KeyDir[kv.Key] = kde
+		}
+	}
+	return nil
 }
 
 // Get returns the value for the given key.

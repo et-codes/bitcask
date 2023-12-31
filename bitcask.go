@@ -1,9 +1,9 @@
 package bitcask
 
 type Bitcask interface {
-	Get(string) (string, error)
-	Put(string, string) (string, error)
-	Delete(string) (string, error)
+	Get(key string) (string, error)
+	Put(key, value string) (string, error)
+	Delete(key string) (string, error)
 	ListKeys() []string
 	Close() error
 }

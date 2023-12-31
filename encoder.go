@@ -65,3 +65,10 @@ func decodeKV(data []byte) KeyValue {
 		Value:     string(data[17+keySize:]),
 	}
 }
+
+// isValidKV returns whether the checksum matches the data.
+func isValidKV(data []byte) bool {
+	savedCRC := binary.LittleEndian.Uint32(data[0:4])
+	actualCRC := crc32.ChecksumIEEE(data[5:])
+	return savedCRC == actualCRC
+}

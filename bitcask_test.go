@@ -71,3 +71,31 @@ func TestBitcask(t *testing.T) {
 		assert.ElementsMatch(t, keys, actual)
 	})
 }
+
+func TestPersistence(t *testing.T) {
+	b := bitcask.New(filename)
+	defer os.Remove(filename)
+
+	pairs := map[string]string{
+		"one":   "I",
+		"two":   "II",
+		"three": "III",
+		"four":  "IV",
+		"five":  "V",
+	}
+
+	for k, v := range pairs {
+		_, err := b.Put(k, v)
+		assert.NoError(t, err)
+	}
+
+	err := b.Close()
+	assert.NoError(t, err)
+
+	b = bitcask.New(filename)
+	for k, v := range pairs {
+		val, err := b.Get(k)
+		assert.NoError(t, err)
+		assert.Equal(t, v, val)
+	}
+}
