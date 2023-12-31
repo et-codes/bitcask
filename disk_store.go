@@ -43,6 +43,7 @@ func NewDiskStore(filename string) Bitcask {
 func (d *DiskStore) LoadPersistent() error {
 	position := 0
 	for {
+		// Read header to get key and value sizes.
 		header := make([]byte, headerSize)
 		n, err := d.ActiveFile.Read(header)
 		if err != nil {
@@ -53,30 +54,37 @@ func (d *DiskStore) LoadPersistent() error {
 		}
 		position += n
 
-		if header[4] == KEEP {
-			keySize := binary.LittleEndian.Uint32(header[9:13])
-			valueSize := binary.LittleEndian.Uint32(header[13:17])
+		keySize := binary.LittleEndian.Uint32(header[9:13])
+		valueSize := binary.LittleEndian.Uint32(header[13:17])
 
-			data := make([]byte, headerSize+keySize+valueSize)
-			copy(data, header)
+		// Read key and value.
+		data := make([]byte, headerSize+keySize+valueSize)
+		copy(data, header)
 
-			n, err := d.ActiveFile.Read(data[headerSize : headerSize+keySize+valueSize])
-			if err != nil {
-				return err
-			}
-			position += n
+		n, err = d.ActiveFile.Read(data[headerSize : headerSize+keySize+valueSize])
+		if err != nil {
+			return err
+		}
+		position += n
 
-			if !isValidKV(data) {
-				return fmt.Errorf("CRC check failed")
-			}
+		// Perform CRC check.
+		if !isValidKV(data) {
+			return fmt.Errorf("CRC check failed")
+		}
 
-			kv := decodeKV(data)
-			kde := KeyDirEntry{
-				ValueSize:     kv.ValueSize,
-				ValuePosition: uint32(position) - kv.ValueSize,
-				Timestamp:     kv.Timestamp,
-			}
+		kv := decodeKV(data)
+		log.Println(kv)
+		kde := KeyDirEntry{
+			ValueSize:     kv.ValueSize,
+			ValuePosition: uint32(position) - kv.ValueSize,
+			Timestamp:     kv.Timestamp,
+		}
+
+		// Add entry to KeyDir, or remove it if delete tombstone.
+		if kv.Tombstone == KEEP {
 			d.KeyDir[kv.Key] = kde
+		} else if kv.Tombstone == DELETE {
+			delete(d.KeyDir, kv.Key)
 		}
 	}
 	return nil

@@ -73,29 +73,65 @@ func TestBitcask(t *testing.T) {
 }
 
 func TestPersistence(t *testing.T) {
-	b := bitcask.New(filename)
-	defer os.Remove(filename)
+	t.Run("loads saved data", func(t *testing.T) {
+		b := bitcask.New(filename)
+		defer os.Remove(filename)
 
-	pairs := map[string]string{
-		"one":   "I",
-		"two":   "II",
-		"three": "III",
-		"four":  "IV",
-		"five":  "V",
-	}
+		pairs := map[string]string{
+			"one":   "I",
+			"two":   "II",
+			"three": "III",
+			"four":  "IV",
+			"five":  "V",
+		}
 
-	for k, v := range pairs {
-		_, err := b.Put(k, v)
+		for k, v := range pairs {
+			_, err := b.Put(k, v)
+			assert.NoError(t, err)
+		}
+
+		err := b.Close()
 		assert.NoError(t, err)
-	}
 
-	err := b.Close()
-	assert.NoError(t, err)
+		b = bitcask.New(filename)
+		for k, v := range pairs {
+			val, err := b.Get(k)
+			assert.NoError(t, err)
+			assert.Equal(t, v, val)
+		}
+	})
 
-	b = bitcask.New(filename)
-	for k, v := range pairs {
-		val, err := b.Get(k)
+	t.Run("doesn't load deleted data", func(t *testing.T) {
+		b := bitcask.New(filename)
+		defer os.Remove(filename)
+
+		pairs := map[string]string{
+			"one":   "I",
+			"two":   "II",
+			"three": "III",
+			"four":  "IV",
+			"five":  "V",
+		}
+
+		for k, v := range pairs {
+			_, err := b.Put(k, v)
+			assert.NoError(t, err)
+		}
+
+		b.Delete("five")
+
+		err := b.Close()
 		assert.NoError(t, err)
-		assert.Equal(t, v, val)
-	}
+
+		b = bitcask.New(filename)
+		for k, v := range pairs {
+			val, err := b.Get(k)
+			if k == "five" {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, v, val)
+			}
+		}
+	})
 }
