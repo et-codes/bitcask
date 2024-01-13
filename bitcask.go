@@ -8,7 +8,10 @@ type Bitcask interface {
 	Close() error
 }
 
-func New(fileName string) Bitcask {
+// Open opens an existing Bitcask database file, or creates a new one
+// if the filename does not exist. Use filename ":memory:" to create an
+// in-memory database.
+func Open(fileName string) Bitcask {
 	if fileName == ":memory:" {
 		return NewMemoryStore()
 	}

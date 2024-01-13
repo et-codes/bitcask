@@ -12,7 +12,7 @@ const filename = "test.db"
 
 func TestBitcask(t *testing.T) {
 	t.Run("test put and get", func(t *testing.T) {
-		b := bitcask.New(filename)
+		b := bitcask.Open(filename)
 		defer os.Remove(filename)
 
 		// put works
@@ -42,7 +42,7 @@ func TestBitcask(t *testing.T) {
 	})
 
 	t.Run("test delete", func(t *testing.T) {
-		b := bitcask.New(filename)
+		b := bitcask.Open(filename)
 		defer os.Remove(filename)
 
 		key := "name"
@@ -59,7 +59,7 @@ func TestBitcask(t *testing.T) {
 	})
 
 	t.Run("test list keys", func(t *testing.T) {
-		b := bitcask.New(filename)
+		b := bitcask.Open(filename)
 		defer os.Remove(filename)
 
 		keys := []string{"firstName", "lastName", "SSN", "Mom's name"}
@@ -82,7 +82,7 @@ func TestPersistence(t *testing.T) {
 	}
 
 	t.Run("loads saved data", func(t *testing.T) {
-		b := bitcask.New(filename)
+		b := bitcask.Open(filename)
 		defer os.Remove(filename)
 
 		for k, v := range pairs {
@@ -93,7 +93,7 @@ func TestPersistence(t *testing.T) {
 		err := b.Close()
 		assert.NoError(t, err)
 
-		b = bitcask.New(filename)
+		b = bitcask.Open(filename)
 		for k, v := range pairs {
 			val, err := b.Get(k)
 			assert.NoError(t, err)
@@ -102,7 +102,7 @@ func TestPersistence(t *testing.T) {
 	})
 
 	t.Run("doesn't load deleted data", func(t *testing.T) {
-		b := bitcask.New(filename)
+		b := bitcask.Open(filename)
 		defer os.Remove(filename)
 
 		for k, v := range pairs {
@@ -115,7 +115,7 @@ func TestPersistence(t *testing.T) {
 		err := b.Close()
 		assert.NoError(t, err)
 
-		b = bitcask.New(filename)
+		b = bitcask.Open(filename)
 		for k, v := range pairs {
 			val, err := b.Get(k)
 			if k == "five" {
