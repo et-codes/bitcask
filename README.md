@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-    b := bitcask.New("bitcask.db")
+    b := bitcask.Open("bitcask.db")
     defer b.Close()
 
     b.Put("firstName", "John")
